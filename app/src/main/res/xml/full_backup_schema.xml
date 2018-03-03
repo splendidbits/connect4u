@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude domain="file" path="/databases/example_sqlite"/>
+    <exclude domain="sharedpref" path="example_pref_name"/>
+</full-backup-content>

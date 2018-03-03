@@ -1,0 +1,31 @@
+<manifest package="com.splendidbits.connect4u"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:name=".main.Connect4UApplication"
+        android:allowBackup="true"
+        android:appCategory="game"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:fullBackupContent="@xml/full_backup_schema"
+        android:hasCode="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity-alias
+            android:name="MainActivity"
+            android:launchMode="singleTask"
+            android:targetActivity="com.splendidbits.connect4u.activity.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity android:name=".activity.MainActivity" />
+
+    </application>
+
+</manifest>
