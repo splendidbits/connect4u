@@ -1,6 +1,6 @@
 package com.splendidbits.connect4u.injection
 
-import com.splendidbits.connect4u.helper.GameHelper
+import com.splendidbits.connect4u.helper.MatchHelper
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -11,7 +11,7 @@ class GameModule {
 
     @Provides
     @Singleton
-    fun provideGameHelper(): GameHelper {
-        return GameHelper()
+    fun provideGameHelper(): MatchHelper {
+        return MatchHelper()
     }
 }
