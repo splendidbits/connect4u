@@ -28,7 +28,7 @@ class MatchHelperTest {
         assertSame(PositionValue.POSITION_USER, positionValue)
 
         moves = listOf(1, 2, 1, 2, 1, 2, 1)
-        positionValue = matchHelper.getPositionValue(findColumn = 0, findRow = 3, playedFirst = playedFirst,
+        positionValue = matchHelper.getPositionValue(findColumn = 0, findRow = 0, playedFirst = playedFirst,
                 moves = moves, totalColumns = totalColumns, totalRows = totalRows)
         assertSame(PositionValue.POSITION_BLANK, positionValue)
 
@@ -36,9 +36,9 @@ class MatchHelperTest {
                 moves = moves, totalColumns = totalColumns, totalRows = totalRows)
         assertSame(PositionValue.POSITION_OPPONENT, positionValue)
 
-        positionValue = matchHelper.getPositionValue(findColumn = 3, findRow = 3, playedFirst = playedFirst,
+        positionValue = matchHelper.getPositionValue(findColumn = 2, findRow = 0, playedFirst = playedFirst,
                 moves = moves, totalColumns = totalColumns, totalRows = totalRows)
-        assertSame(PositionValue.POSITION_BLANK, positionValue)
+        assertSame(PositionValue.POSITION_USER, positionValue)
 
         playedFirst = true
         moves = listOf(0, 0, 1, 2, 0, 0, 3, 1, 1, 3, 1, 2)
@@ -88,6 +88,7 @@ class MatchHelperTest {
         val totalRows = 4
         val matchResult: MatchResult
 
+        // Red went first. Blue won. Horizontal win on row 3.
         val playedFirst = false
         val moves = listOf(0, 1, 0, 1, 1, 0, 2, 0, 2, 1, 3, 3, 2, 2, 3, 3)
         val boardState = matchHelper.getBoardState(totalColumns = totalColumns, totalRows = totalRows,
@@ -107,6 +108,7 @@ class MatchHelperTest {
         val totalRows = 4
         var boardState: BoardState
 
+        // Blue went first. Red won. Vertical win on column 1.
         var playedFirst = false
         var moves = listOf(1, 2, 1, 2, 1, 2, 1)
         boardState = matchHelper.getBoardState(totalColumns = totalColumns, totalRows = totalRows,
@@ -119,6 +121,7 @@ class MatchHelperTest {
         assertSame(1, boardState.winPositions.get(3).columnPosition)
         assertSame(PositionValue.POSITION_OPPONENT, boardState.winPositions.get(0).value)
 
+        // Blue went first. Red won. Horizontal win on row 1.
         playedFirst = true
         moves = listOf(0, 0, 1, 2, 0, 0, 3, 1, 1, 3, 1, 2)
         boardState = matchHelper.getBoardState(totalColumns = totalColumns, totalRows = totalRows,
@@ -131,6 +134,18 @@ class MatchHelperTest {
         assertSame(1, boardState.winPositions.get(3).rowPosition)
         assertSame(PositionValue.POSITION_OPPONENT, boardState.winPositions.get(0).value)
 
+        // Blue went first. Red won. Vertical win on column  3.
+        playedFirst = true
+        moves = listOf(1, 1, 1, 3, 1, 3, 0, 2, 0, 0, 2, 0, 2, 3, 2, 3)
+        boardState = matchHelper.getBoardState(totalColumns = totalColumns, totalRows = totalRows,
+                playedFirst = playedFirst, moves = moves)
+
+        assertSame(MatchResult.RESULT_LOSS, boardState.matchResult)
+        assertSame(3, boardState.winPositions.get(0).columnPosition)
+        assertSame(3, boardState.winPositions.get(1).columnPosition)
+        assertSame(3, boardState.winPositions.get(2).columnPosition)
+        assertSame(3, boardState.winPositions.get(3).columnPosition)
+        assertSame(PositionValue.POSITION_OPPONENT, boardState.winPositions.get(0).value)
     }
 
     @Test

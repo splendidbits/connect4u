@@ -26,42 +26,48 @@ class MatchHelper {
     }
 
     /**
-     * Find the value of a game slot (either [PositionValue.POSITION_BLANK], [PositionValue.POSITION_USER],
-     * or [PositionValue.POSITION_OPPONENT]) for a [findColumn] and [findRow] position.
-     *
-     * Note, like a graph, all positions start from 0,0 (bottom left corner of board)
+     * Find the value of any board position (either [PositionValue.POSITION_BLANK],
+     * [PositionValue.POSITION_USER], or [PositionValue.POSITION_OPPONENT]).
      */
     fun getPositionValue(findColumn: Int, findRow: Int, totalColumns: Int = 4, totalRows: Int = 4,
                          moves: List<Int> = listOf(), playedFirst: Boolean): PositionValue {
 
-        if (findColumn > totalColumns -1 || findRow > totalRows - 1) {
+        // If the position request was outside the available grid.
+        if (findColumn > totalColumns - 1 || findRow > totalRows - 1) {
+            return PositionValue.POSITION_UNKNOWN
+        }
+
+        // If there has not been any drops for the column
+        if (!moves.contains(findColumn)) {
             return PositionValue.POSITION_BLANK
         }
 
         var columnStackHeight = 0
         for ((index, currentColumn) in moves.withIndex()) {
-            if (currentColumn == findColumn) {
-
-                /*
-                 * Steps through each of the moves made by each user, and counts
-                 * each column.
-                 *
-                 * When the column count (or column stack height) has been reached,
-                 * work out if it's a user move or player move based on who went first
-                 * and if the index of this connect-4 column drop is odd or even.
-                 */
-                val isEven = index % 2 == 0
-                if (columnStackHeight == findRow && isEven == playedFirst) {
-                    return PositionValue.POSITION_USER
-
-                } else if (columnStackHeight == findRow) {
-                    return PositionValue.POSITION_OPPONENT
-                }
-                columnStackHeight++
+            /*
+             * Steps through each of the moves made by each user, and counts
+             * each column.
+             *
+             * When the column count (or column stack height) has been reached,
+             * work out if it's a user move or player move based on who went first
+             * and if the index of this connect-4 column drop is odd or even.
+             */
+            val foundColumn = findColumn == currentColumn
+            if (foundColumn && findRow == columnStackHeight) {
+                return if (index % 2 == 0 == playedFirst)
+                    PositionValue.POSITION_USER else PositionValue.POSITION_OPPONENT
             }
+
+            // At the end of the iteration but the stackheight isn't high enough.
+            if (index == moves.size - 1) {
+                return PositionValue.POSITION_BLANK
+            }
+
+            // If the column found matched the find column, increment the height.
+            columnStackHeight += if (foundColumn) 1 else 0
         }
 
-        return PositionValue.POSITION_BLANK
+        return PositionValue.POSITION_UNKNOWN
     }
 
     /**
@@ -71,11 +77,8 @@ class MatchHelper {
      * Returns a [MatchResult] state value.
      */
     fun getBoardState(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(), playedFirst: Boolean): BoardState {
-        // [1, 1, 1, 3, 1, 3, 0, 2, 0, 0, 2, 0, 2, 3, 2, 3]
 
-        // Search for a column win or loss (vertically wins from left to right, starting at 0,0)
-
-        return checkStraightWins(4, 4, moves, playedFirst)
+        return checkStraightWins(totalColumns, totalRows, moves, playedFirst)
 //        return BoardState(MatchResult.RESULT_PENDING, listOf())
     }
 
@@ -118,16 +121,21 @@ class MatchHelper {
         return BoardState(MatchResult.RESULT_PENDING, arrayListOf())
     }
 
-    fun checkDiagonalWins(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(), playedFirst: Boolean) {
+    /**
+     * Checks the board for two types of cascading diagonal wins.
+     */
+    fun checkDiagonalWins(columns: Int, rows: Int, moves: List<Int>, playedFirst: Boolean): BoardState {
 
+        return BoardState(MatchResult.RESULT_PENDING, arrayListOf())
     }
 
-    fun <K, V> MutableMap<K, MutableList<V>>.add(k: K, v: V) = get(k)?.add(v) ?: put(k, mutableListOf(v))
+    fun <K, V> MutableMap<K, MutableList<V>>.add(k: K, v: V) = get(k)?.add(v)
+            ?: put(k, mutableListOf(v))
 
     fun <K> MutableMap<K, MutableList<Position>>.lastContains(k: K, v: PositionValue, amount: Int): Boolean =
-        get(k)?.lastContains(v, amount) ?: false
+            get(k)?.lastContains(v, amount) ?: false
 
     fun MutableList<Position>.lastContains(v: PositionValue, amount: Int): Boolean =
-        size == amount && this.takeLast(amount).all { it.value == v }
+            size == amount && this.takeLast(amount).all { it.value == v }
 }
 
