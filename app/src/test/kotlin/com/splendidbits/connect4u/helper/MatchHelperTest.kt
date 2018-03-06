@@ -55,7 +55,7 @@ class MatchHelperTest {
     fun testIsLocalPlayerTurn() {
         val totalColumns = 4
         val totalRows = 4
-        var playedFirst = false
+        val playedFirst = false
 
         // My turn (one move remaining)
         var moves = listOf(0, 1, 0, 1, 1, 0, 2, 0, 2, 1, 3, 3, 2, 2, 3)
@@ -79,14 +79,41 @@ class MatchHelperTest {
         moves = listOf(1, 2, 1, 2, 1, 2, 1)
         myTurn = matchHelper.isLocalPlayerTurn(totalColumns = totalColumns, totalRows = totalRows,
                 playedFirst = playedFirst, moves = moves)
+
+        // I went first.
+        moves = listOf(0, 0, 1)
+        myTurn = matchHelper.isLocalPlayerTurn(totalColumns = totalColumns, totalRows = totalRows,
+                playedFirst = true, moves = moves)
         assertFalse(myTurn)
+
+        // They won coin toss
+        moves = listOf()
+        myTurn = matchHelper.isLocalPlayerTurn(totalColumns = totalColumns, totalRows = totalRows,
+                playedFirst = false, moves = moves)
+        assertFalse(myTurn)
+
+        // I won coin toss
+        myTurn = matchHelper.isLocalPlayerTurn(totalColumns = totalColumns, totalRows = totalRows,
+                playedFirst = true, moves = moves)
+        assertTrue(myTurn)
     }
 
     @Test
-        fun testMatchWin() {
+    fun testDiagonalWin() {
         val totalColumns = 4
         val totalRows = 4
-        val matchResult: MatchResult
+
+        // Red went first. Blue won. Horizontal win on row 3.
+        val playedFirst = false
+        val moves = listOf(0, 1, 0, 1, 1, 0, 2, 0, 2, 1, 3, 3, 2, 2, 3, 3)
+        matchHelper.checkDiagonalWins(columns = totalColumns, rows = totalRows,
+                playedFirst = playedFirst, moves = moves)
+    }
+
+    @Test
+    fun testMatchWin() {
+        val totalColumns = 4
+        val totalRows = 4
 
         // Red went first. Blue won. Horizontal win on row 3.
         val playedFirst = false
@@ -95,10 +122,10 @@ class MatchHelperTest {
                 playedFirst = playedFirst, moves = moves)
 
         assertSame(MatchResult.RESULT_WIN, boardState.matchResult)
-        assertSame(3, boardState.winPositions.get(0).rowPosition)
-        assertSame(3, boardState.winPositions.get(1).rowPosition)
-        assertSame(3, boardState.winPositions.get(2).rowPosition)
-        assertSame(3, boardState.winPositions.get(3).rowPosition)
+        assertSame(3, boardState.winPositions.get(0).row)
+        assertSame(3, boardState.winPositions.get(1).row)
+        assertSame(3, boardState.winPositions.get(2).row)
+        assertSame(3, boardState.winPositions.get(3).row)
         assertSame(PositionValue.POSITION_USER, boardState.winPositions.get(0).value)
     }
 
@@ -115,10 +142,10 @@ class MatchHelperTest {
                 playedFirst = playedFirst, moves = moves)
 
         assertSame(MatchResult.RESULT_LOSS, boardState.matchResult)
-        assertSame(1, boardState.winPositions.get(0).columnPosition)
-        assertSame(1, boardState.winPositions.get(1).columnPosition)
-        assertSame(1, boardState.winPositions.get(2).columnPosition)
-        assertSame(1, boardState.winPositions.get(3).columnPosition)
+        assertSame(1, boardState.winPositions.get(0).column)
+        assertSame(1, boardState.winPositions.get(1).column)
+        assertSame(1, boardState.winPositions.get(2).column)
+        assertSame(1, boardState.winPositions.get(3).column)
         assertSame(PositionValue.POSITION_OPPONENT, boardState.winPositions.get(0).value)
 
         // Blue went first. Red won. Horizontal win on row 1.
@@ -128,10 +155,10 @@ class MatchHelperTest {
                 playedFirst = playedFirst, moves = moves)
 
         assertSame(MatchResult.RESULT_LOSS, boardState.matchResult)
-        assertSame(1, boardState.winPositions.get(0).rowPosition)
-        assertSame(1, boardState.winPositions.get(1).rowPosition)
-        assertSame(1, boardState.winPositions.get(2).rowPosition)
-        assertSame(1, boardState.winPositions.get(3).rowPosition)
+        assertSame(1, boardState.winPositions.get(0).row)
+        assertSame(1, boardState.winPositions.get(1).row)
+        assertSame(1, boardState.winPositions.get(2).row)
+        assertSame(1, boardState.winPositions.get(3).row)
         assertSame(PositionValue.POSITION_OPPONENT, boardState.winPositions.get(0).value)
 
         // Blue went first. Red won. Vertical win on column  3.
@@ -141,10 +168,10 @@ class MatchHelperTest {
                 playedFirst = playedFirst, moves = moves)
 
         assertSame(MatchResult.RESULT_LOSS, boardState.matchResult)
-        assertSame(3, boardState.winPositions.get(0).columnPosition)
-        assertSame(3, boardState.winPositions.get(1).columnPosition)
-        assertSame(3, boardState.winPositions.get(2).columnPosition)
-        assertSame(3, boardState.winPositions.get(3).columnPosition)
+        assertSame(3, boardState.winPositions.get(0).column)
+        assertSame(3, boardState.winPositions.get(1).column)
+        assertSame(3, boardState.winPositions.get(2).column)
+        assertSame(3, boardState.winPositions.get(3).column)
         assertSame(PositionValue.POSITION_OPPONENT, boardState.winPositions.get(0).value)
     }
 

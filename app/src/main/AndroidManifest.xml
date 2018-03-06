@@ -1,6 +1,8 @@
 <manifest package="com.splendidbits.connect4u"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".main.Connect4UApplication"
         android:allowBackup="true"

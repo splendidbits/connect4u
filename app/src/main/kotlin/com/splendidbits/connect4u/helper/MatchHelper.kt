@@ -16,12 +16,6 @@ class MatchHelper {
             return false
         }
 
-        // Check that the game is still in progress
-        val boardState = getBoardState(totalColumns = totalColumns, totalRows = totalRows, moves = moves, playedFirst = playedFirst)
-        if (MatchResult.RESULT_PENDING != boardState.matchResult) {
-            return false
-        }
-
         return (moves.size % 2 == 0) == playedFirst
     }
 
@@ -77,9 +71,35 @@ class MatchHelper {
      * Returns a [MatchResult] state value.
      */
     fun getBoardState(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(), playedFirst: Boolean): BoardState {
-
         return checkStraightWins(totalColumns, totalRows, moves, playedFirst)
-//        return BoardState(MatchResult.RESULT_PENDING, listOf())
+    }
+
+    /**
+     * Checks the board for two types of cascading diagonal wins.
+     */
+    fun checkDiagonalWins(columns: Int, rows: Int, moves: List<Int>, playedFirst: Boolean): BoardState {
+        val size = 4
+
+        // TODO: Incomplete. I'm still working on this as I ran ot of time,
+        // but can talk through what I think my approach would be.
+
+        for (outerIndex in 0 until size) {
+            System.out.print("\n[0,$outerIndex]\t")
+
+            for (innerIndex in 1..outerIndex) {
+                System.out.print("[$innerIndex,${outerIndex-innerIndex}]\t")
+            }
+        }
+
+        for (outerIndex in size until 0) {
+            System.out.print("\n[0,$outerIndex]\t")
+
+            for (innerIndex in 1..outerIndex) {
+                System.out.print("[$innerIndex,${outerIndex-innerIndex}]\t")
+            }
+        }
+
+        return BoardState(MatchResult.RESULT_PENDING, arrayListOf())
     }
 
     /**
@@ -122,12 +142,22 @@ class MatchHelper {
     }
 
     /**
-     * Checks the board for two types of cascading diagonal wins.
+     * Get the height of all the played pieces for a column
      */
-    fun checkDiagonalWins(columns: Int, rows: Int, moves: List<Int>, playedFirst: Boolean): BoardState {
+    fun getColumnStackHeight(findColumn: Int, moves: List<Int>, playedFirst: Boolean): Int {
+        if (!moves.contains(findColumn)) {
+            return 0
+        }
 
-        return BoardState(MatchResult.RESULT_PENDING, arrayListOf())
+        var columnStackHeight = 0
+        for (currentColumn in moves) {
+            if (findColumn == currentColumn) {
+                columnStackHeight++
+            }
+        }
+        return columnStackHeight
     }
+
 
     fun <K, V> MutableMap<K, MutableList<V>>.add(k: K, v: V) = get(k)?.add(v)
             ?: put(k, mutableListOf(v))

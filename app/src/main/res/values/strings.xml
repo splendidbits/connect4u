@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">connect4U</string>
+    <string name="app_name">CONN4CT</string>
+    <string name="status_pending">"you're %s"</string>
+    <string name="status_won">nice</string>
+    <string name="status_lost">well, that sucks</string>
+    <string name="status_draw">"everyone's a loser"</string>
+    <string name="button_play_again">play again?</string>
+    <string name="colour_blue">blue</string>
+    <string name="colour_red">red</string>
 </resources>
