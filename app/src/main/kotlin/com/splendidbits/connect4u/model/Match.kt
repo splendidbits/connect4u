@@ -17,7 +17,7 @@ data class Match constructor (
         var timeStarted: Long = System.currentTimeMillis(),
         var gridSizeX: Int = 4,
         var gridSizeY: Int = 4,
-        var playedFirst: Boolean = true,
+        var wonToss: Boolean = true,
         var gameMoves: MutableList<Int> = mutableListOf(),
         var matchResult: MatchResult = MatchResult.RESULT_PENDING
 ) : Persistable, Parcelable

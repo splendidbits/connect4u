@@ -10,13 +10,13 @@ class MatchHelper {
     /**
      * Return whether it is the local player's turn.
      */
-    fun isLocalPlayerTurn(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(), playedFirst: Boolean): Boolean {
+    fun isLocalPlayerTurn(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(), wonToss: Boolean): Boolean {
         // Don't do any more calculations if the board is full
         if (totalColumns * totalRows == moves.size) {
             return false
         }
 
-        return (moves.size % 2 == 0) == playedFirst
+        return (moves.size % 2 == 0) == wonToss
     }
 
     /**
@@ -24,7 +24,7 @@ class MatchHelper {
      * [PositionValue.POSITION_USER], or [PositionValue.POSITION_OPPONENT]).
      */
     fun getPositionValue(findColumn: Int, findRow: Int, totalColumns: Int = 4, totalRows: Int = 4,
-                         moves: List<Int> = listOf(), playedFirst: Boolean): PositionValue {
+                         moves: List<Int> = listOf(), wonToss: Boolean): PositionValue {
 
         // If the position request was outside the available grid.
         if (findColumn > totalColumns - 1 || findRow > totalRows - 1) {
@@ -48,11 +48,11 @@ class MatchHelper {
              */
             val foundColumn = findColumn == currentColumn
             if (foundColumn && findRow == columnStackHeight) {
-                return if (index % 2 == 0 == playedFirst)
+                return if (index % 2 == 0 == wonToss)
                     PositionValue.POSITION_USER else PositionValue.POSITION_OPPONENT
             }
 
-            // At the end of the iteration but the stackheight isn't high enough.
+            // At the end of the iteration but the stack height isn't high enough.
             if (index == moves.size - 1) {
                 return PositionValue.POSITION_BLANK
             }
@@ -70,32 +70,57 @@ class MatchHelper {
      *
      * Returns a [MatchResult] state value.
      */
-    fun getBoardState(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(), playedFirst: Boolean): BoardState {
-        return checkStraightWins(totalColumns, totalRows, moves, playedFirst)
+    fun getBoardState(totalColumns: Int = 4, totalRows: Int = 4, moves: List<Int> = listOf(),
+                      wonToss: Boolean, winAmount: Int = 4): BoardState {
+        val straightBoard = checkStraightWins(totalColumns, totalRows, moves, wonToss, winAmount)
+        val diagonalBoard = checkDiagonalWins(totalColumns, totalRows, moves, wonToss, winAmount)
+        val gameFinished = moves.size == totalColumns * totalRows
+
+        if (straightBoard.matchResult == MatchResult.RESULT_PENDING && gameFinished &&
+                diagonalBoard.matchResult == MatchResult.RESULT_PENDING && gameFinished) {
+            return BoardState(MatchResult.RESULT_DRAW, listOf())
+
+        } else if (straightBoard.matchResult == MatchResult.RESULT_WIN ||
+                straightBoard.matchResult == MatchResult.RESULT_LOSS) {
+            return straightBoard
+
+        } else if (diagonalBoard.matchResult == MatchResult.RESULT_WIN ||
+                diagonalBoard.matchResult == MatchResult.RESULT_LOSS) {
+            return diagonalBoard
+        }
+
+        return BoardState(MatchResult.RESULT_PENDING, listOf())
     }
 
     /**
-     * Checks the board for two types of cascading diagonal wins.
+     * Checks the board for any straight vertical or horizontal wins or losses.
      */
-    fun checkDiagonalWins(columns: Int, rows: Int, moves: List<Int>, playedFirst: Boolean): BoardState {
-        val size = 4
+    private fun checkStraightWins(columns: Int, rows: Int, moves: List<Int>, wonToss: Boolean, winAmount: Int): BoardState {
+        val lastColumnValues = mutableMapOf<Int, MutableList<Position>>()
+        val lastRowValues = mutableMapOf<Int, MutableList<Position>>()
 
-        // TODO: Incomplete. I'm still working on this as I ran ot of time,
-        // but can talk through what I think my approach would be.
+        for (column in 0 until columns) {
+            for (row in 0 until rows) {
 
-        for (outerIndex in 0 until size) {
-            System.out.print("\n[0,$outerIndex]\t")
+                val positionValue = getPositionValue(column, row, columns, rows, moves, wonToss)
+                val position = Position(column, row, positionValue)
 
-            for (innerIndex in 1..outerIndex) {
-                System.out.print("[$innerIndex,${outerIndex-innerIndex}]\t")
-            }
-        }
+                val potentialResult = if (positionValue == PositionValue.POSITION_USER)
+                    MatchResult.RESULT_WIN else MatchResult.RESULT_LOSS
 
-        for (outerIndex in size until 0) {
-            System.out.print("\n[0,$outerIndex]\t")
+                // Save the current cell position value and coordinates for comparison.
+                lastColumnValues.add(column, position)
+                lastRowValues.add(row, position)
 
-            for (innerIndex in 1..outerIndex) {
-                System.out.print("[$innerIndex,${outerIndex-innerIndex}]\t")
+                // Check if there were 3 previously stored values for the same column.
+                if (lastColumnValues.hasSeriesMatch(column, winAmount)) {
+                    return BoardState(potentialResult, lastColumnValues.get(column)?.toList()?.takeLast(winAmount)!!)
+                }
+
+                // Check if there were 3 previously stored values for the same row
+                if (lastRowValues.hasSeriesMatch(row, winAmount)) {
+                    return BoardState(potentialResult, lastRowValues.get(row)?.toList()?.takeLast(winAmount)!!)
+                }
             }
         }
 
@@ -103,38 +128,50 @@ class MatchHelper {
     }
 
     /**
-     * Checks the board for any straight vertical or horizontal wins or losses.
+     * Checks the board for two types of cascading diagonal wins.
      */
-    private fun checkStraightWins(columns: Int, rows: Int, moves: List<Int>, playedFirst: Boolean): BoardState {
-        val lastColumnValues = mutableMapOf<Int, MutableList<Position>>()
-        val lastRowValues = mutableMapOf<Int, MutableList<Position>>()
+    fun checkDiagonalWins(columns: Int, rows: Int, moves: List<Int>, wonToss: Boolean, winAmount: Int): BoardState {
+        val BOTTOM_LEFT = 0
+        val BOTTOM_RIGHT = 1
+        val TOP_LEFT = 2
+        val TOP_RIGHT = 3
 
-        for (column in 0 until columns) {
-            for (row in 0 until rows) {
+        for (i in 0 until columns) {
+            val cornerDiagonalValues = mutableMapOf<Int, MutableList<Position>>()
+            val maxIndex = columns - 1
+            var positionValue = getPositionValue(0, i, columns, rows, moves, wonToss)
+            cornerDiagonalValues.add(BOTTOM_LEFT, Position(0, i, positionValue))
 
-                val positionValue = getPositionValue(column, row, columns, rows, moves, playedFirst)
-                val position = Position(column, row, positionValue)
+            positionValue = getPositionValue(maxIndex, maxIndex - i, columns, rows, moves, wonToss)
+            cornerDiagonalValues.add(BOTTOM_RIGHT, Position(maxIndex, maxIndex - i, positionValue))
 
-                val potentialResult = if (positionValue == PositionValue.POSITION_USER)
-                    MatchResult.RESULT_WIN else MatchResult.RESULT_LOSS
+            positionValue = getPositionValue(0, maxIndex - i, columns, rows, moves, wonToss)
+            cornerDiagonalValues.add(TOP_LEFT, Position(0, maxIndex - i, positionValue))
 
-                if (positionValue != PositionValue.POSITION_BLANK) {
-                    // Check if there were 3 previously stored values for the same column.
-                    if (lastColumnValues.lastContains(column, positionValue, 3)) {
-                        lastColumnValues.add(column, position)
-                        return BoardState(potentialResult, lastColumnValues.get(column)?.toList()!!)
-                    }
+            positionValue = getPositionValue(maxIndex - i, 0, columns, rows, moves, wonToss)
+            cornerDiagonalValues.add(TOP_RIGHT, Position(maxIndex - i, 0, positionValue))
 
-                    // Check if there were 3 previously stored values for the same row
-                    if (lastRowValues.lastContains(row, positionValue, 3)) {
-                        lastRowValues.add(row, position)
-                        return BoardState(potentialResult, lastRowValues.get(row)?.toList()!!)
-                    }
+            for (j in 1..i) {
+                positionValue = getPositionValue(j, i - j, columns, rows, moves, wonToss)
+                cornerDiagonalValues.add(BOTTOM_LEFT, Position(j, i - j, positionValue))
+
+                positionValue = getPositionValue(maxIndex - j, (maxIndex - i) + j, columns, rows, moves, wonToss)
+                cornerDiagonalValues.add(BOTTOM_RIGHT, Position(maxIndex - j, (maxIndex - i) + j, positionValue))
+
+                positionValue = getPositionValue(j, (maxIndex - i) + j, columns, rows, moves, wonToss)
+                cornerDiagonalValues.add(TOP_LEFT, Position(j, (maxIndex - i) + j, positionValue))
+
+                positionValue = getPositionValue((maxIndex - i) + j, j, columns, rows, moves, wonToss)
+                cornerDiagonalValues.add(TOP_RIGHT, Position((maxIndex - i) + j, j, positionValue))
+            }
+
+            for (corner in 0 until 4) {
+                if (cornerDiagonalValues.hasSeriesMatch(corner, winAmount)) {
+                    val positions = cornerDiagonalValues.get(corner)?.toList()?.takeLast(winAmount)!!
+                    val potentialResult = if (positions.get(0).value == PositionValue.POSITION_USER)
+                        MatchResult.RESULT_WIN else MatchResult.RESULT_LOSS
+                    return BoardState(potentialResult, positions)
                 }
-
-                // Save the current cell position value and coordinates for comparison.
-                lastColumnValues.add(column, position)
-                lastRowValues.add(row, position)
             }
         }
 
@@ -144,7 +181,7 @@ class MatchHelper {
     /**
      * Get the height of all the played pieces for a column
      */
-    fun getColumnStackHeight(findColumn: Int, moves: List<Int>, playedFirst: Boolean): Int {
+    fun getColumnStackHeight(findColumn: Int, moves: List<Int>): Int {
         if (!moves.contains(findColumn)) {
             return 0
         }
@@ -162,10 +199,20 @@ class MatchHelper {
     fun <K, V> MutableMap<K, MutableList<V>>.add(k: K, v: V) = get(k)?.add(v)
             ?: put(k, mutableListOf(v))
 
-    fun <K> MutableMap<K, MutableList<Position>>.lastContains(k: K, v: PositionValue, amount: Int): Boolean =
-            get(k)?.lastContains(v, amount) ?: false
+    fun MutableMap<Int, MutableList<Position>>.hasSeriesMatch(k: Int, amount: Int): Boolean {
+        val lastAmount = get(k)?.takeLast(amount) ?: listOf()
+        if (lastAmount.size < amount) {
+            return false
+        }
 
-    fun MutableList<Position>.lastContains(v: PositionValue, amount: Int): Boolean =
-            size == amount && this.takeLast(amount).all { it.value == v }
+        for ((index, position) in lastAmount.withIndex()) {
+            if (index == 0) continue
+            val previousPositionValue = lastAmount.get(index - 1).value
+            if (previousPositionValue != position.value || position.value == PositionValue.POSITION_BLANK) {
+                return false
+            }
+        }
+        return true
+    }
 }
 
