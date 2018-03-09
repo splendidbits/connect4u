@@ -1,10 +1,18 @@
 <resources>
     <string name="app_name">CONN4CT</string>
+
+    <string name="menu_new_title">Home</string>
+    <string name="menu_new_desc">Create a new match</string>
+
+    <string name="menu_new_cpu">New CPU Match</string>
+    <string name="menu_new_human">New Human Match</string>
+
     <string name="status_pending">"you're %s"</string>
     <string name="status_won">nice</string>
     <string name="status_lost">well, that sucks</string>
     <string name="status_draw">"everyone's a loser"</string>
     <string name="button_play_again">play again?</string>
+
     <string name="colour_blue">blue</string>
     <string name="colour_red">red</string>
 </resources>

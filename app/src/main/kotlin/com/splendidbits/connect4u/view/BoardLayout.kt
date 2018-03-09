@@ -10,6 +10,7 @@ class BoardLayout @JvmOverloads constructor(context: Context, attrs: AttributeSe
     : FrameLayout(context, attrs, defStyle) {
     private var columns = 4
     private var rows = 4
+    private lateinit var listener: (Int) -> Unit
 
     /**
      * Add any kind of chip position to a column and row coordinate.
@@ -18,16 +19,13 @@ class BoardLayout @JvmOverloads constructor(context: Context, attrs: AttributeSe
      * columns first
      */
     fun addChip(chip: ChipView, column: Int, row: Int) {
-        val chipSize = resources.getDimensionPixelSize(R.dimen.chipSize)
-        val chipPadding = resources.getDimensionPixelSize(R.dimen.chipPadding)
+        val boardMargin = resources.getDimensionPixelSize(R.dimen.boardPadding)
+        val appWidth = rootView.width - (boardMargin * 2)
+        val appHeight = rootView.height - (boardMargin * 2)
+        val boardWidth = if (appHeight > appWidth) appWidth else appHeight
+        val chipSize = boardWidth / columns
 
-        setPadding(chipPadding, chipPadding, chipPadding, chipPadding)
-
-        val layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.BOTTOM)
-
+        val layoutParams = FrameLayout.LayoutParams(chipSize, chipSize, Gravity.BOTTOM)
         layoutParams.leftMargin = (chipSize * column)
         layoutParams.bottomMargin = (chipSize * row)
 
@@ -35,6 +33,10 @@ class BoardLayout @JvmOverloads constructor(context: Context, attrs: AttributeSe
         removeChip(coordinates)
 
         chip.tag = coordinates
+        chip.setOnClickListener({
+            listener.invoke(coordinates.first)
+        })
+
         addView(chip, layoutParams)
     }
 
@@ -46,6 +48,7 @@ class BoardLayout @JvmOverloads constructor(context: Context, attrs: AttributeSe
     fun setBoardDimensions(columns: Int, rows: Int, listener: (Int) -> Unit) {
         this.columns = columns
         this.rows = rows
+        this.listener = listener
 
         removeAllViews()
         for (column in 0 until columns) {

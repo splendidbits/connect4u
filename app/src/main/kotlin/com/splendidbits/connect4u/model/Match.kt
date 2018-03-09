@@ -15,8 +15,9 @@ data class Match constructor (
         var id: Long = 0L,
         var cpuMatch: Boolean = true,
         var timeStarted: Long = System.currentTimeMillis(),
-        var gridSizeX: Int = 4,
-        var gridSizeY: Int = 4,
+        var columns: Int = 4,
+        var rows: Int = 4,
+        var winLength: Int = 4,
         var wonToss: Boolean = true,
         var gameMoves: MutableList<Int> = mutableListOf(),
         var matchResult: MatchResult = MatchResult.RESULT_PENDING

@@ -48,30 +48,34 @@ class GameFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        gameBoardLayout.setBoardDimensions(match.gridSizeY, match.gridSizeX, columnClickListener)
+        gameBoardLayout.setBoardDimensions(match.columns, match.rows, columnClickListener)
+
         playAgainButton.setOnClickListener(resetListener)
         resetListener.onClick(null)
+        processNewMoves(match.gameMoves)
     }
 
     private val resetListener = View.OnClickListener {
-        val playerColor = if (match.playedFirst) getString(R.string.colour_blue) else getString(R.string.colour_blue)
+        val playerColor = if (match.wonToss) getString(R.string.colour_blue) else getString(R.string.colour_blue)
         gameStatus.text = String.format(resources.getString(R.string.status_pending), playerColor)
         playAgainButton.visibility = View.GONE
         match.gameMoves = mutableListOf()
-        gameBoardLayout.setBoardDimensions(match.gridSizeY, match.gridSizeX, columnClickListener)
+        gameBoardLayout.setBoardDimensions(match.columns, match.rows, columnClickListener)
     }
 
     private val columnClickListener = { column: Int ->
-        match.gameMoves.add(column)
-        getMoves(match.gameMoves)
+        if (matchHelper.getColumnStackHeight(column, match.gameMoves) < match.rows) {
+            match.gameMoves.add(column)
+            getMoves(match)
+        }
     }
 
     /**
      * Makes a request to the 9DT webservice with an array of current moves.
      */
-    private fun getMoves(currentMoves: List<Int>) {
-        if (match.matchResult == MatchResult.RESULT_PENDING) {
-            apiService.submitFetchMoves(currentMoves.toString())
+    private fun getMoves(match: Match) {
+        if (match.columns < 5 && match.rows < 5) {
+            apiService.submitFetchMoves(match.gameMoves.toString())
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ result ->
@@ -80,6 +84,12 @@ class GameFragment : Fragment() {
                         processNewMoves(updatedMoves)
                     }, { _ ->
                     })
+        } else {
+            val updatedMoves = mutableListOf<Int>()
+            updatedMoves.addAll(match.gameMoves)
+            updatedMoves.add(matchHelper.getComputerMove(match.columns, match.rows,
+                    match.gameMoves, match.wonToss, match.winLength))
+            processNewMoves(updatedMoves)
         }
     }
 
@@ -90,43 +100,47 @@ class GameFragment : Fragment() {
      * 3) Persists the updated Match
      */
     private fun processNewMoves(moves: List<Int> = arrayListOf()) {
-        val boardState = matchHelper.getBoardState(totalColumns = match.gridSizeY,
-                totalRows = match.gridSizeX,
-                playedFirst = match.playedFirst,
-                moves = moves)
+        val boardState = matchHelper.getBoardState(
+                totalColumns = match.columns,
+                totalRows = match.rows,
+                wonToss = match.wonToss,
+                moves = moves,
+                winLength = match.winLength)
 
         addMovesToBoard(moves)
 
         // If we have won or loss, clear the board and highlight the winning streak
-        val matchResult = boardState.matchResult
-        if (matchResult == MatchResult.RESULT_WIN || matchResult == MatchResult.RESULT_LOSS) {
+        if (boardState.matchResult == MatchResult.RESULT_DRAW) {
             playAgainButton.visibility = View.VISIBLE
+            gameStatus.text = getString(R.string.status_draw)
 
-            // Clear the board
-            gameBoardLayout.setBoardDimensions(match.gridSizeY, match.gridSizeX, {})
-
-            val positionValue: PositionValue
-            if (matchResult == MatchResult.RESULT_WIN) {
-                positionValue = PositionValue.POSITION_USER
-                gameStatus.text = getString(R.string.status_won)
-            } else {
-                positionValue = PositionValue.POSITION_OPPONENT
-                gameStatus.text = getString(R.string.status_lost)
-            }
+        } else if (boardState.matchResult == MatchResult.RESULT_WIN) {
+            gameBoardLayout.setBoardDimensions(match.columns, match.rows, {})
+            playAgainButton.visibility = View.VISIBLE
+            gameStatus.text = getString(R.string.status_won)
 
             // Add each winning position to highlight
             for (position in boardState.winPositions) {
-                val chip = ChipView(aContext).setPositionValue(positionValue)
+                val chip = ChipView(aContext).setPositionValue(PositionValue.POSITION_USER)
                 gameBoardLayout.addChip(chip, position.column, position.row)
             }
 
-        } else if (moves.size == match.gridSizeX * match.gridSizeY) {
+        } else if (boardState.matchResult == MatchResult.RESULT_LOSS) {
+            gameBoardLayout.setBoardDimensions(match.columns, match.rows, {})
             playAgainButton.visibility = View.VISIBLE
-            gameStatus.text = getString(R.string.status_draw)
+            gameStatus.text = getString(R.string.status_lost)
+
+            // Add each winning position to highlight
+            for (position in boardState.winPositions) {
+                val chip = ChipView(aContext).setPositionValue(PositionValue.POSITION_OPPONENT)
+                gameBoardLayout.addChip(chip, position.column, position.row)
+            }
         }
 
         match.gameMoves.clear()
         match.gameMoves.addAll(moves)
+
+        localStorageDao.saveMatch(match)
     }
 
     /**
@@ -136,8 +150,9 @@ class GameFragment : Fragment() {
         val currentMoves = mutableListOf<Int>()
         for (column in moves) {
             // Get the height of the move column
-            val row = matchHelper.getColumnStackHeight(column, currentMoves, playedFirst = match.playedFirst)
-            val isBlue = matchHelper.isLocalPlayerTurn(moves = currentMoves, playedFirst = match.playedFirst)
+            val row = matchHelper.getColumnStackHeight(column, currentMoves)
+            val isBlue = matchHelper.isLocalPlayerTurn(moves = currentMoves, wonToss = match.wonToss
+            )
 
             val positionValue = if (isBlue) PositionValue.POSITION_USER else PositionValue.POSITION_OPPONENT
             val chip = ChipView(aContext).setPositionValue(positionValue)

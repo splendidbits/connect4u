@@ -115,7 +115,7 @@ class MatchHelperTest {
         var moves = arrayListOf(3, 0, 0, 1, 0, 1, 0, 1, 1, 3, 2, 2, 3, 2, 2, 3)
 
         var boardState = matchHelper.checkDiagonalWins(columns = totalColumns, rows = totalRows,
-                wonToss = wonToss, moves = moves, winAmount = 4)
+                wonToss = wonToss, moves = moves, winLength = 4)
 
         assertSame(MatchResult.RESULT_LOSS, boardState.matchResult)
         assertSame(0, boardState.winPositions.get(0).column)
@@ -130,7 +130,7 @@ class MatchHelperTest {
 
         moves = arrayListOf(1, 3, 0, 1, 2, 2, 0, 0, 3, 1, 3, 3, 2, 2, 1, 0)
         boardState = matchHelper.checkDiagonalWins(columns = totalColumns, rows = totalRows,
-                wonToss = wonToss, moves = moves, winAmount = 4)
+                wonToss = wonToss, moves = moves, winLength = 4)
         assertSame(MatchResult.RESULT_LOSS, boardState.matchResult)
         assertSame(0, boardState.winPositions.get(0).column)
         assertSame(3, boardState.winPositions.get(0).row)
@@ -151,7 +151,7 @@ class MatchHelperTest {
         val moves = arrayListOf(3, 0, 2, 3, 2, 2, 1, 0, 1, 3, 1, 0, 0, 3)
 
         val boardState = matchHelper.checkDiagonalWins(columns = totalColumns, rows = totalRows,
-                wonToss = wonToss, moves = moves, winAmount = 4)
+                wonToss = wonToss, moves = moves, winLength = 4)
 
         assertSame(MatchResult.RESULT_WIN, boardState.matchResult)
         assertSame(0, boardState.winPositions.get(0).column)
@@ -186,7 +186,7 @@ class MatchHelperTest {
         wonToss = true
         moves = listOf(2, 2, 3, 2, 1)
         boardState = matchHelper.getBoardState(totalColumns = totalColumns, totalRows = totalRows,
-                wonToss = wonToss, moves = moves, winAmount = 3)
+                wonToss = wonToss, moves = moves, winLength = 3)
         assertSame(MatchResult.RESULT_WIN, boardState.matchResult)
     }
 

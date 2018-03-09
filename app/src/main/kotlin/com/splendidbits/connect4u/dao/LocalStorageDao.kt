@@ -8,7 +8,7 @@ import io.requery.sql.KotlinEntityDataStore
 class LocalStorageDao(val context: Context, val entityStore: KotlinEntityDataStore<Persistable>) {
 
     fun saveMatch(match: Match) {
-        entityStore.upsert(match)
+        entityStore.insert(match, Long::class)
     }
 
     fun getMatches(): List<Match> {
