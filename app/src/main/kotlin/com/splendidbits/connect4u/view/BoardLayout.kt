@@ -16,7 +16,7 @@ class BoardLayout @JvmOverloads constructor(context: Context, attrs: AttributeSe
      * Add any kind of chip position to a column and row coordinate.
      *
      * Note: All coordinates (column,row) start from bottom left. and move up
-     * columns first
+     * boardSize first
      */
     fun addChip(chip: ChipView, column: Int, row: Int) {
         val boardMargin = resources.getDimensionPixelSize(R.dimen.boardPadding)

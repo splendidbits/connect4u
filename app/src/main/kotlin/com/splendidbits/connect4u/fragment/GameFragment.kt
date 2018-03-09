@@ -48,7 +48,7 @@ class GameFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        gameBoardLayout.setBoardDimensions(match.columns, match.rows, columnClickListener)
+        gameBoardLayout.setBoardDimensions(match.boardSize, match.boardSize, columnClickListener)
 
         playAgainButton.setOnClickListener(resetListener)
         resetListener.onClick(null)
@@ -60,11 +60,11 @@ class GameFragment : Fragment() {
         gameStatus.text = String.format(resources.getString(R.string.status_pending), playerColor)
         playAgainButton.visibility = View.GONE
         match.gameMoves = mutableListOf()
-        gameBoardLayout.setBoardDimensions(match.columns, match.rows, columnClickListener)
+        gameBoardLayout.setBoardDimensions(match.boardSize, match.boardSize, columnClickListener)
     }
 
     private val columnClickListener = { column: Int ->
-        if (matchHelper.getColumnStackHeight(column, match.gameMoves) < match.rows) {
+        if (matchHelper.getColumnStackHeight(column, match.gameMoves) < match.boardSize) {
             match.gameMoves.add(column)
             getMoves(match)
         }
@@ -74,7 +74,7 @@ class GameFragment : Fragment() {
      * Makes a request to the 9DT webservice with an array of current moves.
      */
     private fun getMoves(match: Match) {
-        if (match.columns < 5 && match.rows < 5) {
+        if (match.boardSize < 5 && match.boardSize < 5) {
             apiService.submitFetchMoves(match.gameMoves.toString())
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -87,7 +87,7 @@ class GameFragment : Fragment() {
         } else {
             val updatedMoves = mutableListOf<Int>()
             updatedMoves.addAll(match.gameMoves)
-            updatedMoves.add(matchHelper.getComputerMove(match.columns, match.rows,
+            updatedMoves.add(matchHelper.getComputerMove(match.boardSize, match.boardSize,
                     match.gameMoves, match.wonToss, match.winLength))
             processNewMoves(updatedMoves)
         }
@@ -101,8 +101,8 @@ class GameFragment : Fragment() {
      */
     private fun processNewMoves(moves: List<Int> = arrayListOf()) {
         val boardState = matchHelper.getBoardState(
-                totalColumns = match.columns,
-                totalRows = match.rows,
+                totalColumns = match.boardSize,
+                totalRows = match.boardSize,
                 wonToss = match.wonToss,
                 moves = moves,
                 winLength = match.winLength)
@@ -115,7 +115,7 @@ class GameFragment : Fragment() {
             gameStatus.text = getString(R.string.status_draw)
 
         } else if (boardState.matchResult == MatchResult.RESULT_WIN) {
-            gameBoardLayout.setBoardDimensions(match.columns, match.rows, {})
+            gameBoardLayout.setBoardDimensions(match.boardSize, match.boardSize, {})
             playAgainButton.visibility = View.VISIBLE
             gameStatus.text = getString(R.string.status_won)
 
@@ -126,7 +126,7 @@ class GameFragment : Fragment() {
             }
 
         } else if (boardState.matchResult == MatchResult.RESULT_LOSS) {
-            gameBoardLayout.setBoardDimensions(match.columns, match.rows, {})
+            gameBoardLayout.setBoardDimensions(match.boardSize, match.boardSize, {})
             playAgainButton.visibility = View.VISIBLE
             gameStatus.text = getString(R.string.status_lost)
 

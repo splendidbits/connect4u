@@ -46,8 +46,7 @@ class MainActivity : BaseActivity() {
     fun newGame(newGameEvent: NewGameEvent) {
         if (newGameEvent.isCpuGame) {
             val newMatch = Match()
-            newMatch.columns = 5
-            newMatch.rows = 5
+            newMatch.boardSize = 7
             matches.add(newMatch)
             pagerAdapter?.notifyDataSetChanged()
             fragmentPager.currentItem = matches.size+1
