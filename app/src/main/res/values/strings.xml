@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CONN4CT</string>
+    <string name="app_name">connect4u</string>
 
     <string name="menu_new_title">Home</string>
     <string name="menu_new_desc">Create a new match</string>
